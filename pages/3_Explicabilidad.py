@@ -255,7 +255,7 @@ with tab4:
                     "valor_actual":      "{:.2f}",
                     "valor_recomendado": "{:.2f}",
                     "cambio":            "{:+.2f}",
-                }).applymap(
+                }).apply(
                     lambda v: "color: #D85A30" if isinstance(v, (int, float)) and v < 0
                     else "color: #1D9E75",
                     subset=["cambio"],
