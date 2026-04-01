@@ -209,12 +209,17 @@ with tab4:
     if len(idx_high) == 0:
         st.info("No hay clientes de alto riesgo en el conjunto de test.")
     else:
-        target_prob = st.slider("Probabilidad objetivo (reducir hasta)", 0.10, 0.50, 0.30, 0.05)
+        target_prob = st.slider(
+            "Probabilidad objetivo (reducir hasta)",
+            0.10, 0.50, 0.30, 0.05
+        )
+
         idx_cf = st.selectbox(
             "Seleccionar cliente de alto riesgo",
             options=range(min(len(idx_high), 50)),
             format_func=lambda i: f"Cliente #{idx_high[i]} · Score actual: {gb_probs_test[idx_high[i]]:.1%}",
         )
+
         i_cf = idx_high[idx_cf]
 
         with st.spinner("Calculando contrafactual..."):
@@ -224,43 +229,88 @@ with tab4:
             )
 
         prob_orig = gb_probs_test[i_cf]
-        st.metric("Probabilidad actual", f"{prob_orig:.1%}",
-                  delta=f"Objetivo: reducir a {target_prob:.0%}",
-                  delta_color="inverse")
+
+        st.metric(
+            "Probabilidad actual",
+            f"{prob_orig:.1%}",
+            delta=f"Objetivo: {target_prob:.0%}",
+            delta_color="inverse"
+        )
 
         if changes:
             df_cf = pd.DataFrame(changes)
+
+            # 🔥 LIMPIEZA CRÍTICA (evita errores)
+            for col in ["valor_actual", "valor_recomendado", "cambio"]:
+                if col in df_cf.columns:
+                    df_cf[col] = pd.to_numeric(df_cf[col], errors="coerce")
+
+            # =========================
+            # GRÁFICO
+            # =========================
             fig_cf = go.Figure()
+
             fig_cf.add_trace(go.Bar(
                 name="Valor actual",
-                x=df_cf["feature"], y=df_cf["valor_actual"],
-                marker_color=COLORS["coral"], opacity=0.85,
+                x=df_cf["feature"],
+                y=df_cf["valor_actual"],
+                marker_color=COLORS["coral"],
+                opacity=0.85,
             ))
+
             fig_cf.add_trace(go.Bar(
                 name="Valor recomendado",
-                x=df_cf["feature"], y=df_cf["valor_recomendado"],
-                marker_color=COLORS["teal"], opacity=0.85,
+                x=df_cf["feature"],
+                y=df_cf["valor_recomendado"],
+                marker_color=COLORS["teal"],
+                opacity=0.85,
             ))
+
             fig_cf.update_layout(
-                barmode="group", height=360,
-                xaxis_title="", yaxis_title="Valor de la feature",
-                plot_bgcolor="white", paper_bgcolor="white",
+                barmode="group",
+                height=360,
+                xaxis_title="",
+                yaxis_title="Valor de la feature",
+                plot_bgcolor="white",
+                paper_bgcolor="white",
                 margin=dict(t=20, b=60),
             )
+
             st.plotly_chart(fig_cf, use_container_width=True)
 
+            # =========================
+            # TABLA PRO (SIN STYLER BUGS)
+            # =========================
             st.subheader("Cambios recomendados")
+
+            # 👉 versión estable sin .style
+            df_cf_display = df_cf.copy()
+
+            df_cf_display["cambio_fmt"] = df_cf_display["cambio"].apply(
+                lambda x: f"🔻 {x:.2f}" if pd.notna(x) and x < 0
+                else f"🔺 {x:.2f}" if pd.notna(x)
+                else "-"
+            )
+
+            df_cf_display["valor_actual"] = df_cf_display["valor_actual"].map(
+                lambda x: f"{x:.2f}" if pd.notna(x) else "-"
+            )
+
+            df_cf_display["valor_recomendado"] = df_cf_display["valor_recomendado"].map(
+                lambda x: f"{x:.2f}" if pd.notna(x) else "-"
+            )
+
             st.dataframe(
-                df_cf.style.format({
-                    "valor_actual":      "{:.2f}",
-                    "valor_recomendado": "{:.2f}",
-                    "cambio":            "{:+.2f}",
-                }).apply(
-                    lambda v: "color: #D85A30" if isinstance(v, (int, float)) and v < 0
-                    else "color: #1D9E75",
-                    subset=["cambio"],
-                ),
+                df_cf_display[[
+                    "feature",
+                    "valor_actual",
+                    "valor_recomendado",
+                    "cambio_fmt"
+                ]],
                 use_container_width=True,
             )
+
         else:
-            st.success("El cliente ya está por debajo del umbral objetivo o no se encontraron cambios necesarios.")
+            st.success(
+                "El cliente ya está por debajo del umbral objetivo o no se encontraron cambios necesarios."
+            )
