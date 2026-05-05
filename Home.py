@@ -120,7 +120,7 @@ st.markdown("""
 with st.sidebar:
     st.image("https://img.icons8.com/fluency/48/000000/recurring-appointment.png", width=40)
     st.title("Churn Intelligence")
-    st.caption("Dashboard de análisis y retención de clientes")
+    st.caption("Dashboard de Análisis y Retención de Donantes")
     st.divider()
 
     st.subheader("🔎 Filtros globales")
@@ -136,7 +136,7 @@ with st.sidebar:
         seg_map = dict(zip(segmentos_labels, segmentos_disp))
 
         seg_sel_labels = st.segmented_control(
-            "Segmento de cliente",
+            "Segmento de donantes",
             options=segmentos_labels,
             selection_mode="multi",
             default=segmentos_labels,
@@ -199,7 +199,7 @@ with st.sidebar:
     # =========================
     # LTV
     # =========================
-    st.markdown("**💰 Valor del cliente**")
+    st.markdown("**💰 Valor del Donante**")
     ltv_min = st.number_input(
         "LTV mínimo ($)",
         min_value=0, value=0, step=100,
@@ -230,7 +230,7 @@ with st.sidebar:
     # =========================
     st.markdown(f"""
     <div class="kpi-box">
-        <div class="kpi-title">Clientes seleccionados</div>
+        <div class="kpi-title">Donantes Seleccionados</div>
         <div class="kpi-value">{mask.sum():,} / {len(df_fe):,}</div>
     </div>
     """, unsafe_allow_html=True)
@@ -239,11 +239,11 @@ with st.sidebar:
     # EXPORTAR
     # =========================
     if st.button("⬇️ Exportar selección", use_container_width=True):
-        excel_bytes = to_excel_bytes(df_filtered, "Clientes_Filtrados")
+        excel_bytes = to_excel_bytes(df_filtered, "Donantes_Filtrados")
         st.download_button(
             label="Descargar Excel",
             data=excel_bytes,
-            file_name="clientes_filtrados.xlsx",
+            file_name="donantes_filtrados.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             use_container_width=True,
         )
@@ -255,14 +255,15 @@ with st.sidebar:
 # CONTENIDO PRINCIPAL — HOME
 # ══════════════════════════════════════════════════════════════════════════════
 st.title("🔄 Churn Intelligence Dashboard")
-st.caption("Análisis predictivo de abandono de clientes · Actualizado con datos del archivo cargado   ·    (CAS)")
+st.caption("Análisis predictivo de abandono de donantes · Actualizado con datos del archivo cargado   ·    (CAS)")
+st.caption("MRR: Monthly Recurring Revenue (Ingresos Recurrentes Mensuales)")
 st.divider()
 
 kpis = resumen_rapido(df_filtered)
 
 # ── Fila 1: KPIs principales ──────────────────────────────────────────────────
 c1, c2, c3, c4, c5 = st.columns(5)
-c1.metric("Clientes totales",    f"{kpis['total_clientes']:,}")
+c1.metric("Donantes totales",    f"{kpis['total_clientes']:,}")
 c2.metric("Churners reales",     f"{kpis['churners']:,}")
 c3.metric("Tasa de churn",       f"{kpis['tasa_churn']:.1%}")
 c4.metric("MRR total",           f"${kpis['mrr_total']:,.0f}")
@@ -278,26 +279,37 @@ col_a, col_b = st.columns(2)
 with col_a:
     st.subheader("Distribución de cuadrantes estratégicos")
     quad_counts = df_filtered["cuadrante"].value_counts().reset_index()
-    quad_counts.columns = ["Cuadrante", "Clientes"]
+    quad_counts.columns = ["Cuadrante", "Donantes"]
+    #quad_colors_list = [
+    #    {"Máxima Prioridad": COLORS["coral"],
+    #     "Proteger Relación": COLORS["teal"],
+    #     "Intervención Ligera": COLORS["amber"],
+    #     "Monitoreo Pasivo": COLORS["gray"]}.get(q, COLORS["gray"])
+    #    for q in quad_counts["Cuadrante"]
+    #]
+    # 🎨 Colores personalizados por cuadrante
     quad_colors_list = [
-        {"Máxima Prioridad": COLORS["coral"],
-         "Proteger Relación": COLORS["teal"],
-         "Intervención Ligera": COLORS["amber"],
-         "Monitoreo Pasivo": COLORS["gray"]}.get(q, COLORS["gray"])
+        {
+            "Máxima Prioridad":    "#B60D07",  # 🔴 Rojo (nuevo)
+            "Proteger Relación":   "#1490F5",  # 🔵 (reemplaza verde)
+           "Intervención Ligera": "#FFAB3D",  # 🟠 Naranja
+            "Monitoreo Pasivo":    "#FAF20F",  # 🟡 Amarillo
+        }.get(q, "#BDC3C7")  # Gris fallback
         for q in quad_counts["Cuadrante"]
     ]
+    
     fig_quad = px.bar(
-        quad_counts, x="Cuadrante", y="Clientes",
+        quad_counts, x="Cuadrante", y="Donantes",
         color="Cuadrante",
         color_discrete_sequence=quad_colors_list,
-        text="Clientes",
+        text="Donantes",
     )
     fig_quad.update_traces(textposition="outside")
     fig_quad.update_layout(
         showlegend=False, height=340,
         plot_bgcolor="white", paper_bgcolor="white",
         margin=dict(t=20, b=20),
-        xaxis_title="", yaxis_title="Número de clientes",
+        xaxis_title="", yaxis_title="Nro. de donantes",
     )
     st.plotly_chart(fig_quad, use_container_width=True)
 
@@ -333,6 +345,9 @@ with col_b:
 # ── Fila 3: Scatter LTV × Riesgo + Distribución de score ─────────────────────
 col_c, col_d = st.columns(2)
 
+
+
+
 with col_c:
     st.subheader("Matriz LTV × Riesgo")
     fig_scatter = px.scatter(
@@ -340,10 +355,10 @@ with col_c:
         x="ltv_estimado", y="churn_score",
         color="cuadrante",
         color_discrete_map={
-            "Máxima Prioridad":    COLORS["coral"],
-            "Proteger Relación":   COLORS["teal"],
-            "Intervención Ligera": COLORS["amber"],
-            "Monitoreo Pasivo":    COLORS["gray"],
+            "Máxima Prioridad":    "#B60D07",  # 🔴 Rojo (nuevo)
+            "Proteger Relación":   "#1490F5",  # 🔵 (reemplaza verde)
+            "Intervención Ligera": "#FFAB3D",  # 🟠 Naranja
+            "Monitoreo Pasivo":    "#FAF20F",  # 🟡 Amarillo
         },
         hover_data=["cliente_id", "segmento", "mrr"] if "cliente_id" in df_filtered.columns else None,
         opacity=0.6, size_max=6,
@@ -377,14 +392,14 @@ with col_d:
         barmode="overlay", height=340,
         plot_bgcolor="white", paper_bgcolor="white",
         margin=dict(t=20, b=20),
-        xaxis_title="Churn Score", yaxis_title="Clientes",
+        xaxis_title="Churn Score", yaxis_title="Donantes",
         legend=dict(orientation="h", yanchor="bottom", y=-0.3),
     )
     st.plotly_chart(fig_hist, use_container_width=True)
 
-# ── Fila 4: Top clientes en riesgo ────────────────────────────────────────────
+# ── Fila 4: Top Doantes en riesgo ────────────────────────────────────────────
 st.divider()
-st.subheader("🚨 Top 20 clientes en máxima prioridad")
+st.subheader("🚨 Top 20 Donantes en máxima prioridad")
 
 top_cols = [c for c in [
     "cliente_id", "segmento", "region",
@@ -418,7 +433,7 @@ if len(top20) > 0:
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
 else:
-    st.info("No hay clientes en 'Máxima Prioridad' con los filtros actuales.")
+    st.info("No hay donantes en 'Máxima Prioridad' con los filtros actuales.")
 
 # ── Footer ─────────────────────────────────────────────────────────────────────
 st.divider()
