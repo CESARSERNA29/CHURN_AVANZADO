@@ -11,6 +11,7 @@ from my_utils.helpers import COLORS, QUAD_COLORS, QUAD_ACTIONS, to_excel_bytes
 st.set_page_config(page_title="Segmentación", page_icon="🗺️", layout="wide")
 st.title("🗺️ Segmentación y Priorización")
 st.caption("Matriz LTV × Riesgo, microsegmentos y tablas de acción por región y categoría")
+st.caption("MRR: Monthly Recurring Revenue (Ingresos Recurrentes Mensuales)")
 
 if "df_fe" not in st.session_state:
     st.warning("Vuelve a la página **Home** para cargar los datos primero.")
@@ -68,7 +69,7 @@ with tab1:
                         margin-bottom:10px;border-radius:0 8px 8px 0;
                         background:#FAFAF8">
               <b style="color:{color}">{quad}</b><br>
-              <small>{len(sub):,} clientes · MRR ${mrr_quad:,.0f}<br>
+              <small>{len(sub):,} donantes · MRR ${mrr_quad:,.0f}<br>
               Tasa churn real: {churn_rate:.1%}</small><br>
               <small style="color:#5F5E5A;font-style:italic">{QUAD_ACTIONS[quad]}</small>
             </div>
@@ -90,7 +91,7 @@ with tab2:
             .reset_index()
         )
 
-        # Heatmap: clientes por región y cuadrante
+        # Heatmap: donantes por región y cuadrante
         pivot_wide = pivot.pivot_table(
             index="region", columns="cuadrante",
             values="n_clientes", fill_value=0
@@ -99,7 +100,7 @@ with tab2:
             pivot_wide,
             color_continuous_scale=["#E1F5EE", "#D85A30"],
             text_auto=True,
-            title="Nº Clientes por Región y Cuadrante",
+            title="Nº Donates por Región y Cuadrante",
             aspect="auto",
         )
         fig_heat.update_layout(height=420, margin=dict(t=40, b=20),
@@ -275,7 +276,7 @@ with tab4:
 
 # ─────────────────────────────────────────────────────────────────────────────
 with tab5:
-    st.subheader("Tabla exportable — todos los clientes con score y cuadrante")
+    st.subheader("Tabla exportable — todos los donantes con score y cuadrante")
 
     export_cols = [c for c in [
         "cliente_id", "segmento", "region",
@@ -303,11 +304,11 @@ with tab5:
         }).background_gradient(subset=["churn_score"], cmap="RdYlGn_r"),
         use_container_width=True, height=440,
     )
-    st.caption(f"{len(export_df):,} clientes en la selección")
+    st.caption(f"{len(export_df):,} donantes en la selección")
 
-    excel_exp = to_excel_bytes(export_df, "Clientes_Segmentados")
+    excel_exp = to_excel_bytes(export_df, "Donantes_Segmentados")
     st.download_button(
         "⬇️ Exportar tabla completa (Excel)", excel_exp,
-        "clientes_segmentados.xlsx",
+        "donantes_segmentados.xlsx",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )

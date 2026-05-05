@@ -96,6 +96,10 @@ with tab1:
         f"AUC-ROC: {best['AUC-ROC']:.4f} · "
         f"AUC-PR: {best['AUC-PR']:.4f}"
     )
+st.caption("AUC-PR: Área bajo la curva Precision–Recall, usado para evaluar qué tan bien un modelo identifica la clase positiva - Churn")
+
+st.caption("Lift: Métrica de negocio que responde a una pregunta muy práctica:  ¿Cuántas veces mejor se está identificando casos positivos (churn, fraude, etc.), que si eligiera al azar?")
+
 # ─────────────────────────────────────────────────────────────────────────────
 with tab2:
     col1, col2 = st.columns(2)

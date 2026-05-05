@@ -12,6 +12,10 @@ st.set_page_config(page_title="Survival & Uplift", page_icon="📈", layout="wid
 st.title("📈 Survival Analysis & Uplift Model")
 st.caption("Kaplan-Meier, Cox PH aproximado y modelo de intervención T-Learner")
 
+st.caption("Uplift Model (Modelo de incremento o modelo de tratamiento causal): Modelo de ML que responder: ¿Cuál es el efecto real de una acción (tratamiento) sobre un individuo?")      
+st.caption("Uplift no solo predice qué va a pasar, sino qué cambiaría si haces algo vs si no lo haces.")
+
+
 if "df_fe" not in st.session_state:
     st.warning("Vuelve a la página **Home** para cargar los datos primero.")
     st.stop()
